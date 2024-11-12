@@ -9,13 +9,14 @@ import {
   ActivityIndicator,
   Image,
   StyleSheet,
+  TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp } from '@react-navigation/native';
-import { WeatherData } from '../types';
 import { WEATHER_API_KEY } from '@env';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { WeatherData } from '../types';
 
 type RootStackParamList = {
   Weather: undefined;
@@ -48,7 +49,6 @@ const WeatherScreen: React.FC<Props> = ({ navigation }) => {
       setWeatherData(response.data);
       saveRecentCity(city);
     } catch (err) {
-      console.log(err);
       setError('City not found');
     } finally {
       setLoading(false);
@@ -76,43 +76,58 @@ const WeatherScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Weather App</Text>
       <TextInput
         placeholder="Enter city name"
         value={city}
         onChangeText={setCity}
         style={styles.input}
       />
-      <Button title="Get Weather" onPress={fetchWeather} />
-      <Button
-        title={`Switch to ${isCelsius ? 'Fahrenheit' : 'Celsius'}`}
+      <TouchableOpacity style={styles.button} onPress={fetchWeather}>
+        <Text style={styles.buttonText}>Get Weather</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.toggleButton}
         onPress={() => setIsCelsius(!isCelsius)}
-      />
+      >
+        <Text style={styles.toggleButtonText}>
+          Switch to {isCelsius ? 'Fahrenheit' : 'Celsius'}
+        </Text>
+      </TouchableOpacity>
 
       {loading && <ActivityIndicator size="large" style={styles.loader} />}
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {weatherData && (
-        <View style={styles.weatherContainer}>
-          <Text>City: {weatherData.name}</Text>
-          <Text>Temperature: {weatherData.main.temp} {isCelsius ? '°C' : '°F'}</Text>
-          <Text>Description: {weatherData.weather[0].description}</Text>
+      {!error && weatherData && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{weatherData.name}</Text>
+          <Text style={styles.cardTemp}>
+            {weatherData.main.temp}°{isCelsius ? 'C' : 'F'}
+          </Text>
+          <Text style={styles.cardDescription}>{weatherData.weather[0].description}</Text>
           <Image
             source={{ uri: `https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png` }}
             style={styles.icon}
           />
-          <Button
-            title="See More Details"
+          <TouchableOpacity
+            style={styles.detailsButton}
             onPress={() => navigation.navigate('Details', { weatherData })}
-          />
+          >
+            <Text style={styles.detailsButtonText}>See More Details</Text>
+          </TouchableOpacity>
         </View>
       )}
 
       {recentCities.length > 0 && (
         <View style={styles.recentContainer}>
-          <Text>Recently Searched Cities:</Text>
-          {recentCities.map((city, index) => (
-            <Text key={index}>{city}</Text>
-          ))}
+          <Text style={styles.recentTitle}>Recently Searched Cities:</Text>
+          <ScrollView style={styles.recentList}>
+            {recentCities.map((city, index) => (
+              <Text key={index} style={styles.recentCity}>
+                {city}
+              </Text>
+            ))}
+          </ScrollView>
         </View>
       )}
     </View>
@@ -120,13 +135,120 @@ const WeatherScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  input: { borderBottomWidth: 1, marginBottom: 20, padding: 10 },
-  loader: { marginTop: 20 },
-  error: { color: 'red', marginTop: 20 },
-  weatherContainer: { marginTop: 20 },
-  icon: { width: 50, height: 50 },
-  recentContainer: { marginTop: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f2f2f2',
+    padding: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  toggleButton: {
+    backgroundColor: '#007AFF',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  toggleButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  loader: {
+    marginTop: 20,
+  },
+  error: {
+    color: 'red',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    marginTop: 20,
+  },
+  cardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  cardTemp: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    marginTop: 10,
+  },
+  cardDescription: {
+    fontSize: 16,
+    color: '#777',
+    marginTop: 5,
+  },
+  icon: {
+    width: 80,
+    height: 80,
+    marginTop: 10,
+  },
+  detailsButton: {
+    marginTop: 15,
+    backgroundColor: '#007AFF',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  detailsButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  recentContainer: {
+    marginTop: 30,
+  },
+  recentTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  recentCity: {
+    fontSize: 16,
+    color: '#555',
+    paddingVertical: 5,
+  },
+  recentList: {
+    maxHeight: 100,
+  },
 });
 
 export default WeatherScreen;
