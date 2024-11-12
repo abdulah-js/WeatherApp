@@ -2,9 +2,9 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import WeatherScreen from './WeatherScreen';
-import DetailedScreen from './DetailedScreen';
-import { WeatherData } from './types';
+import WeatherScreen from './src/components/WeatherScreen';
+import DetailedScreen from './src/components/DetailedScreen';
+import { WeatherData } from './src/types';
 
 type RootStackParamList = {
   Weather: undefined;

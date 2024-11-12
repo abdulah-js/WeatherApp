@@ -1,8 +1,9 @@
-// DetailedScreen.tsx
+// src/components/DetailedScreen.tsx
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
-import { WeatherData } from './types';
+import { WeatherData } from '../types';
 
 type RootStackParamList = {
   Details: { weatherData: WeatherData };
