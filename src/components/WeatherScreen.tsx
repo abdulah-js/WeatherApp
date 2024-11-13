@@ -4,13 +4,12 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
-  Button,
+  TouchableOpacity,
   Text,
   ActivityIndicator,
   Image,
   StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+  FlatList,
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,11 +17,11 @@ import { WEATHER_API_KEY } from '@env';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { WeatherData } from '../types';
 
+// Define navigation types for type safety in navigation props
 type RootStackParamList = {
   Weather: undefined;
   Details: { weatherData: WeatherData };
 };
-
 type WeatherScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Weather'>;
 
 type Props = {
@@ -30,46 +29,51 @@ type Props = {
 };
 
 const WeatherScreen: React.FC<Props> = ({ navigation }) => {
+  // State to manage the city input, weather data, loading, and error state
   const [city, setCity] = useState<string>('');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [recentCities, setRecentCities] = useState<string[]>([]);
-  const [isCelsius, setIsCelsius] = useState<boolean>(true);
+  const [isCelsius, setIsCelsius] = useState<boolean>(true); // Unit toggle between Celsius/Fahrenheit
 
+  // Fetch weather data from the API based on the entered city and current unit
   const fetchWeather = async () => {
     setLoading(true);
-    setError(null);
+    setError(null); // Clear previous errors
     const units = isCelsius ? 'metric' : 'imperial';
 
     try {
       const response = await axios.get(
         `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${WEATHER_API_KEY}&units=${units}`
       );
-      setWeatherData(response.data);
-      saveRecentCity(city);
+      setWeatherData(response.data); // Store fetched weather data in state
+      saveRecentCity(city); // Save the searched city to recent searches
     } catch (err) {
-      setError('City not found');
+      setError('City not found'); // Show error if city not found or request fails
     } finally {
-      setLoading(false);
+      setLoading(false); // Stop loading indicator once the request completes
     }
   };
 
+  // Save the most recent search to local storage and update recentCities state
   const saveRecentCity = async (city: string) => {
-    const updatedCities = [city, ...recentCities.filter(c => c !== city)].slice(0, 5);
+    const updatedCities = [city, ...recentCities.filter(c => c !== city)].slice(0, 5); // Keep last 5 unique cities
     setRecentCities(updatedCities);
-    await AsyncStorage.setItem('recentCities', JSON.stringify(updatedCities));
+    await AsyncStorage.setItem('recentCities', JSON.stringify(updatedCities)); // Persist to AsyncStorage
   };
 
+  // Load recent search cities from AsyncStorage on component mount
   const loadRecentCities = async () => {
     try {
       const cities = await AsyncStorage.getItem('recentCities');
-      if (cities) setRecentCities(JSON.parse(cities));
+      if (cities) setRecentCities(JSON.parse(cities)); // Parse and set recent cities if data exists
     } catch (e) {
-      console.error('Failed to load recent cities');
+      console.error('Failed to load recent cities'); // Log error if loading fails
     }
   };
 
+  // Load recent cities only once when the component mounts
   useEffect(() => {
     loadRecentCities();
   }, []);
@@ -77,15 +81,21 @@ const WeatherScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Weather App</Text>
+      
+      {/* Input for city name */}
       <TextInput
         placeholder="Enter city name"
         value={city}
         onChangeText={setCity}
         style={styles.input}
       />
+
+      {/* Button to fetch weather */}
       <TouchableOpacity style={styles.button} onPress={fetchWeather}>
         <Text style={styles.buttonText}>Get Weather</Text>
       </TouchableOpacity>
+
+      {/* Button to toggle between Celsius and Fahrenheit */}
       <TouchableOpacity
         style={styles.toggleButton}
         onPress={() => setIsCelsius(!isCelsius)}
@@ -95,10 +105,14 @@ const WeatherScreen: React.FC<Props> = ({ navigation }) => {
         </Text>
       </TouchableOpacity>
 
+      {/* Show loading indicator while fetching data */}
       {loading && <ActivityIndicator size="large" style={styles.loader} />}
+
+      {/* Show error message if city is not found */}
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {!error && weatherData && (
+      {/* Display weather data card if data is available */}
+      {weatherData && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{weatherData.name}</Text>
           <Text style={styles.cardTemp}>
@@ -109,6 +123,8 @@ const WeatherScreen: React.FC<Props> = ({ navigation }) => {
             source={{ uri: `https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png` }}
             style={styles.icon}
           />
+          
+          {/* Navigate to Details screen with more weather information */}
           <TouchableOpacity
             style={styles.detailsButton}
             onPress={() => navigation.navigate('Details', { weatherData })}
@@ -118,22 +134,25 @@ const WeatherScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       )}
 
+      {/* Recent searches list */}
       {recentCities.length > 0 && (
         <View style={styles.recentContainer}>
           <Text style={styles.recentTitle}>Recently Searched Cities:</Text>
-          <ScrollView style={styles.recentList}>
-            {recentCities.map((city, index) => (
-              <Text key={index} style={styles.recentCity}>
-                {city}
-              </Text>
-            ))}
-          </ScrollView>
+          
+          {/* Render recent cities as a scrollable list */}
+          <FlatList
+            data={recentCities}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => <Text style={styles.recentCity}>{item}</Text>}
+            style={styles.recentList}
+          />
         </View>
       )}
     </View>
   );
 };
 
+// Styles for WeatherScreen components
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -241,13 +260,13 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 10,
   },
+  recentList: {
+    maxHeight: 100,
+  },
   recentCity: {
     fontSize: 16,
     color: '#555',
     paddingVertical: 5,
-  },
-  recentList: {
-    maxHeight: 100,
   },
 });
 
