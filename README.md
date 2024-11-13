@@ -22,7 +22,7 @@ A simple weather app built using React Native and TypeScript that fetches and di
 ## 1. Clone the Repository:
 
 ```bash
-git clone https://github.com/your-username/WeatherApp.git
+git clone https://github.com/abdulah-js/WeatherApp.git
 cd WeatherApp
 ```
 
